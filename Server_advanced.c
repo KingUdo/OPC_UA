@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
     UA_Server_addDataSourceVariableNode(server, myIntegerBNodeId,
                                         UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
                                         UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
-                                        myIntegerBName, UA_NODEID_NULL, attr, dateDataSource, $
+                                        myIntegerBName, UA_NODEID_NULL, attr, dateDataSource, NULL);
 
  /* add a variable  node to the address space */
 
@@ -174,7 +174,7 @@ int main(int argc, char** argv) {
     UA_Server_addDataSourceVariableNode(server, myIntegerPNodeId,
                                         UA_NODEID_NUMERIC(0, UA_NS0ID_OBJECTSFOLDER),
                                         UA_NODEID_NUMERIC(0, UA_NS0ID_ORGANIZES),
-                                        myIntegerPName, UA_NODEID_NULL, attrP, dateDataSourceP$
+                                        myIntegerPName, UA_NODEID_NULL, attrP, dateDataSourceP, NULL);
 
     UA_StatusCode retval = UA_Server_run(server, &running);
     UA_Server_delete(server);
