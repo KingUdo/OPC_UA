@@ -175,9 +175,22 @@ Um diese Beispiel zu vollenden muss noch eine Funktion eingebaut werden, welche 
 
 Wie oben schon besprochen gibt es noch eine weitere Methode Daten von externen Quellen zu bekommen. Bei der zweiten Methode, wird in einem bestimmten Abstand der Datenwert abgefragt, und in einer Variable gespeichert. Wenn nun eine Nodeanfrage stattfindet wird diese Variabel der Node übergeben, und der Wert zurückgegeben. Das Beispeil für diesen Aufbau ist Server_NodeVar3.c.
 
-
-
-
+Die Funktion, die immer wieder ausgeführt wird ist in diesem Fall `testCallback`. Die Funktion selber schreibt zuerst "tesstcallback" in den Log. und addiert dann auf den Wert von ButtonValue eine Einhet hinzu. 
+```
+static void testCallback(UA_Server *server, void *data) {
+    UA_LOG_INFO(logger, UA_LOGCATEGORY_USERLAND, "testcallback %i", ButtonValue);
+    ButtonValue = ButtonValue;
+}
+```
+Naturlich muss dem Server noch gesagt werden, dass diese immer wieder ausführbare Funktion existiert. Dies wird im unteren Teil des Scriptes gemacht. Dort wird zuert einem `UA_Job` `job` als `UA_JOBTYPE_METHODCALL` definert, wobei als Methode die Funktion `testcallback` angegeben wurde. Hirbei wird als Datenwert ein `NULL` weitergeben. Dieser Wert kann natürlich angepast werden.  
+Danach wird der UA_Job noch dem Server mit `UA_Server_addRepeatedJob` hinzugefügt. Dabei wird dem Server der Name des Servers, der names des Jobs und das Zeit intervall. Das Zeitintervall wird in Millisekunden angegegben.
+```
+UA_Job job = {.type = UA_JOBTYPE_METHODCALL,
+                  .job.methodCall = {.method = testCallback, .data = NULL} };
+    UA_Server_addRepeatedJob(server, job, 2000, NULL); // call every 2 sec
+```
+Auch dieser Server kann mit `gcc -std=c99 Server_NodeVar3.c ../../open62541.c -o Server_NodeVar3` kompeliert werden. Beim ausführen des Servers sollte man alle zwei Sekunden eine Loginfo mit `testcallback` bekommen. Hierbei kann man beobachten, wie sich der Wert von ButtonValue alle zwei Sekunden erhöht. Dies kann man auch mit UaExpert. Nach dem Erstellen eines Subscription kann man sort sehen wie sich der Wert immer um 1 erhöht. Dabei darf man sich nicht von der Log Info `VALUE READ!! 2572` irritieren lassen. Hierbei wird der dem Handeler zugewiesenen Wert ausgelesen. Dieser wurde am Anfang als 2572 definiert. Die `onRead` Funktion verändert in der jetzigen Konfiguration nicht den Orginalwert der Node, sonder gibt nur einen andern Wert bei einer Abfrage zurück. 
+Dies ergibt jetzt die Frage wie man den Orginalwert einer Node verändern kann. Einerseitz von einem externen Programm, andererseitz innerhalb der Funktion.
 
 
 
