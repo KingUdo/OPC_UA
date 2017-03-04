@@ -170,4 +170,27 @@ onRead(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp,
 }
 ```
 
-Auf diese Art und Weise ist es möglich OPC-UA Anfragen präziese mit bestimmten Datenwerten zu beantworten. 
+Auf diese Art und Weise ist es möglich OPC-UA Anfragen mit nach der Anfrage gewonnenen Werten zu beantworten. 
+Um diese Beispiel zu vollenden muss noch eine Funktion eingebaut werden, welche der Variable ButtonValue einen Wert gibt, und beim Aufruf der `onRead` Funktion ausgeführt wird. 
+
+Wie oben schon besprochen gibt es noch eine weitere Methode Daten von externen Quellen zu bekommen. Bei der zweiten Methode, wird in einem bestimmten Abstand der Datenwert abgefragt, und in einer Variable gespeichert. Wenn nun eine Nodeanfrage stattfindet wird diese Variabel der Node übergeben, und der Wert zurückgegeben. Das Beispeil für diesen Aufbau ist Server_NodeVar3.c.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
