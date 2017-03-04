@@ -189,21 +189,37 @@ UA_Job job = {.type = UA_JOBTYPE_METHODCALL,
                   .job.methodCall = {.method = testCallback, .data = NULL} };
     UA_Server_addRepeatedJob(server, job, 2000, NULL); // call every 2 sec
 ```
-Auch dieser Server kann mit `gcc -std=c99 Server_NodeVar3.c ../../open62541.c -o Server_NodeVar3` kompeliert werden. Beim ausführen des Servers sollte man alle zwei Sekunden eine Loginfo mit `testcallback` bekommen. Hierbei kann man beobachten, wie sich der Wert von ButtonValue alle zwei Sekunden erhöht. Dies kann man auch mit UaExpert. Nach dem Erstellen eines Subscription kann man sort sehen wie sich der Wert immer um 1 erhöht. Dabei darf man sich nicht von der Log Info `VALUE READ!! 2572` irritieren lassen. Hierbei wird der dem Handeler zugewiesenen Wert ausgelesen. Dieser wurde am Anfang als 2572 definiert. Die `onRead` Funktion verändert in der jetzigen Konfiguration nicht den Orginalwert der Node, sonder gibt nur einen andern Wert bei einer Abfrage zurück. 
+Auch dieser Server kann mit `gcc -std=c99 Server_NodeVar3.c ../../open62541.c -o Server_NodeVar3` kompeliert werden. Beim ausführen des Servers sollte man alle zwei Sekunden eine Loginfo mit `testcallback` bekommen. Hierbei kann man beobachten, wie sich der Wert von ButtonValue alle zwei Sekunden erhöht. Dies kann man auch mit UaExpert. Nach dem Erstellen eines Subscription kann man sort sehen wie sich der Wert immer um 1 erhöht. Dabei darf man sich nicht von der Log Info 'VALUE READ!! 2572' irritieren lassen. Hierbei wird der dem Handeler zugewiesenen Wert ausgelesen. Dieser wurde am Anfang als 2572 definiert. Die `onRead` Funktion verändert in der jetzigen Konfiguration nicht den Orginalwert der Node, sonder gibt nur einen andern Wert bei einer Abfrage zurück. 
+
+
+###Node Beschreiben
 Dies ergibt jetzt die Frage wie man den Orginalwert einer Node verändern kann. Einerseitz von einem externen Programm, andererseitz innerhalb der Funktion.
+Auch hierfür ist ein Beispiel vorhanden. Im Script Server_NodeVar4.c welches auf Server_NodeVar2.c basiert wurde auch eine Schreibfunktion eingebaut. Um die korrekte Funktion der Schribfunktion zu bestätigen, wurde zuerst die Lesefunktion bearbeitet. In dieser wurden die Definition der Variable `ButtonValue` herrausgenommen, genauso wie die dem `*handel` nicht mehr der Wert vom `ButtonValue` zugewiesen wird. Jetzt wird automatisch bei einer Anfrage der Wert der Node zurückgegeben.
+```
+static UA_StatusCode
+onRead(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp,
+            const UA_NumericRange *range, UA_DataValue *dataValue) {
 
+    UA_LOG_INFO(logger, UA_LOGCATEGORY_USERLAND, "VALUE READ!!! %i", *(UA_UInt32*)handle);
+    UA_Variant_setScalarCopy(&dataValue->value, (UA_UInt32*)handle, &UA_TYPES[UA_TYPES_INT32]);
+}
+```
+Darüber hinaus wurde noch eine Funktion `onWrite` hinzugefügt. Diese ist sehr ähnlich zu der `onRead` Funktion. Die Funktion selber prüft erst ob der Eingabedatentyp dem vorgegebenen Datentyp von `UA_TYPES_INT32` entspricht und übergibt dann dem handel den Wert von data. Zuletzt wird noch ein InfoLog Event ausgegeben mit "written value" und dem aktuellen Wert des handel. 
+```
+onWrite(void *handle, const UA_NodeId nodeid,
+             const UA_Variant *data, const UA_NumericRange *range) {
 
+    if(UA_Variant_isScalar(data) && data->type == &UA_TYPES[UA_TYPES_INT32] && data->data){
+        *(UA_UInt32*)handle = *(UA_UInt32*)data->data;
+    }
+    UA_LOG_INFO(logger, UA_LOGCATEGORY_USERLAND, "written value %i", *(UA_UInt32*)handle);
+}
+```
+Die onWrite Funktion muss natürlich noch dem Server übergeben werden. Dies wird im `UA_DataSource` getan. Hierbei wird unter `.write` die Funktion `onWrite` verlinkt.
+```
+UA_DataSource dateDataSource = (UA_DataSource) {.handle = &myInteger, .read = onRead, .write = onWrite};
+```
+Getestet kann diese Script mit dem UaExpert. Nach dem erfogreichen kompelieren mit `gcc -std=c99 Server_NodeVar4.c ../../open62541.c -o Server_NodeVar4` kann der Server abermals mit `./Server_NodeVar4` gestartet werden. Im UeExpert, sollte nun der Pi Server sichtbar sein. Nach dem erzeugen einer Subscription der Node ist der aktuelle Wert sichtbar. Dieser Wert kann im UeExpert auch durch klicken verändert werden. Es sollte nun möglich ein diesen Wert zu verändern, so dass der Wert auch konstant auf dem veränderten Wert bleibt. Es ist bei einer Veränderung der Node auch möglich im Terminalfenster die Infonachricht 'written value 123' zu beobachten.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+##Client
+To DO....
