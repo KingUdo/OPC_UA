@@ -1,10 +1,9 @@
 ###Setup
 ####Vorraussetzungen
-Vorrausgesetzt wird eine simple Jessie Lite version welche an ein Netzwerk angeschlossen ist und über ssh erreichbar ist. Hierfür sehe https://www.raspberrypi.org/downloads/raspbian/ für Tutorials über den Setupprozess, und https://www.raspberrypi.org/documentation/remote-access/ssh/ für die Aktivierung des SSH. Dabei ist auch noch wichtig eine statische IP dem Pi zu geben. Dies kann am einfachsten durch die Konfiguration des Routers geschehen.
+Vorrausgesetzt wird eine Jessie Lite Version auf einem Raspbery Pi, welcher an ein Netzwerk angeschlossen ist und über ssh erreichbar ist. Hierfür sehe https://www.raspberrypi.org/downloads/raspbian/ für Tutorials über den Setupprozess, und https://www.raspberrypi.org/documentation/remote-access/ssh/ für die Aktivierung des SSH. Dabei ist auch noch wichtig eine statische IP der Pi zu geben. Dies kann am einfachsten durch die Konfiguration des Routers geschehen.
 
 ####open62541
 Zuerst wird ein Verzeichniss angelegt und dort die neuse Version von open62541 herruntergeladen und extrahiert.
-
 ```
 ssh pi@192.168.178.62
 mkdir open62541
@@ -21,7 +20,6 @@ LICENSE  doc        libopen62541.a  open62541.h
 ```
 
 Um zu testen ob der simple Setup funktioniert hat würde ich empfehlen die in `examples` gegebenen Beispiele auszuführen. Dafür muss noch eine zweite SSH Session geöffnet werden.
-
 **erste SSH Session**
 ```
 cd examples
@@ -33,40 +31,38 @@ cd ~/open62541/examples
 ./client
 ```
 
-Wenn nun in beiden Sessions sich was getan hat, und die Scripte keine Fehler geworfen haben, sollte alles korrekt erstellt sein.
+Wenn nun in beiden Sessions sich etwas getan hat, und die Scripte keine Fehler geworfen haben, sollte alles korrekt erstellt sein.
+Als weiteres Programm um die Funktion der OPC-UA Server zu testen wir UA-Expert (https://www.unified-automation.com/downloads/opc-ua-clients.html) genutzt. Hierbei bitte die richtige Version für das Betriebssystem herrunterladen und instalieren.
 
-Als weiteres Programm um die Funktion der OPC-UA Server zu testen nutzen wir UA-Expert (https://www.unified-automation.com/downloads/opc-ua-clients.html) hierbei bitte die richtige Version für das Betriebssystem herrunterladen.
-
-
-###Aufbau eines open62541 servers
-Um das ganze so verständlich wie möglich zu machen habe ich alle hier beschriebenen Scripte hinterlegt. Ich werde dennoch nicht bei allen skripten den kompletten Code beschreiben, bzw hier hinterlegen.
-Zuerst gehen wir aus dem example Verzeichniss herraus und holen uns alle Skripte:
+###Aufbau eines open62541 Servers
+Um das ganze so verständlich wie möglich zu machen sind alle hier beschriebenen Scripte hinterlegt. Dennoch wird nicht bei allen Skripten der kompletten Code beschrieben, da die Skripe auf einander aufbauen.
+Um einfacher folgen zu könen wird vorgeschlagen sich alle Skripte via git clone herrunterzuladen. Dabei dies am besten im open63542 machen.
 ```
 cd ../
 mkdir projekts
 cd projekts
 git clone https://github.com/KingUdo/OPC_UA.git
 ```
-Als erstes Script sehen wir uns die Grundlagen eines Server an.
+Als erstes Script wird das Skript Server_Min.c genauer beschriben, welches den Aufbau eines OPC-UA Servers beschreibt.
 ```
 cd server
 cat Server_Min.c
 ```
-Hier sieht man das Grundgerüst eines Servers. Zuerst importieren wir die signal.h welche einige Standards auf welche wir später zurückgreifen beinhaltet. Dannach wird die open62541.h importiert. Dieser Pfad muss gegebennenfals angepasst werden.
+Hier sieht man das Grundgerüst eines Servers. Zuerst wir die signal.h importiert, welche einige Standarts beinhaltet. Dannach wird die open62541.h importiert. Dieser Pfad muss gegebennenfals angepasst werden.
 ```
 #include <signal.h>
 #include "../../open62541.h"
 ```
-Danach definieren wir eine Funktion die sich um die Variable running kümmert. Diese muss auf true gesetzt werden während der Server läuft. Die funktion `signalHandler` wird später, bei einem Strg+C angesprochen und beendet den Server sachgemäß um den tcp port wieder freizugeben.
+Danach definieren wir eine Funktion die sich um die Variable running kümmert. Diese muss auf true gesetzt werden während der Server läuft. Die Funktion `signalHandler` wird später, bei einem Strg+C angesprochen und beendet den Server sachgemäß um den tcp Port wieder freizugeben.
 ```
 UA_Boolean running = true;
 void signalHandler(int sig) {
     running = false;
 }
 ```
-Dahinter befindet sich di `main` Funktion. Diese startet zuerst die `signal()` Finktion aus signal.h welche Eingaben überwacht. Dabei wird nur bei Interrupt Signalen `SIGINT` ausgelöst und die Funktion `signalHandler` aktiviert.
-Nach dem aktiviern der signal Funktion wird ein Server erstellt. Dabei wird zuert eine Server Config Datei config erstellt und mit dem Standart ausgestattet. Danach wird ein ServerNetworkLayer nl erstellt welcher ein TCP Layer ist und wiederrum mit dem UA_ConnectionConfig_standard ausgestattet wird, und auf port 4840 läuft.
-Diese ServerNetworkLayer wird dann der config Datei hinzugefügt. Zuletzt wird noch ein neuer UA_Server pointer names server mit der config Datei erstellt.   
+Dahinter befindet sich di `main` Funktion. Diese startet zuerst die `signal()` Finktion aus signal.h welche Eingaben überwacht. Dabei wird nur bei 'Interrupt Signalen' wie Strg + c `SIGINT` ausgelöst und die Funktion `signalHandler` aktiviert.
+Nach dem aktiviern der `signal` Funktion wird ein Server erstellt. Dabei wird zuert eine Server Config Datei `config` erstellt und mit dem Standartwerten ausgestattet. Danach wird ein ServerNetworkLayer `nl` erstellt welcher ein TCP Layer ist und wiederrum mit dem `UA_ConnectionConfig_standard` ausgestattet wird, und auf port 4840 läuft.
+Diese ServerNetworkLayer wird dann der `config` Datei hinzugefügt und zuletzt wird noch ein neuer `UA_Server` pointer names `server` mit der `config` Datei erstellt.   
 ```
 int main(int argc, char** argv)
 {
@@ -80,7 +76,7 @@ int main(int argc, char** argv)
     UA_Server *server = UA_Server_new(config);
 ```
 Als zweiten Block sieht man hier das Script welches den gerade erstellten Server ausführt. 
-Hierbei wird die Variable `status` erstellt welche alle Statusmeldungen vom Server kommend aufnimmt. Der Server wird heirbei mit `UA_Server_run(server, &running)` gestartet. In dieser Schleife bleibt der Server bis die variable `running` auf false gesetzt wird. Wenn dies der Fall ist wird der Server und die NetworkLayer gelöscht und der Wert vom status zurückgegeben.
+Hierbei wird die Variable `status` erstellt welche alle Statusmeldungen vom Server kommend aufnimmt. Der Server wird mit `UA_Server_run(server, &running)` gestartet. In dieser Schleife bleibt der Server bis die variable `running` auf false gesetzt wird. Wenn dies der Fall ist wird der Server und die NetworkLayer gelöscht und der Wert vom Status zurückgegeben.
 ```
 /* Run the server loop */
     UA_StatusCode status = UA_Server_run(server, &running);
@@ -89,20 +85,18 @@ Hierbei wird die Variable `status` erstellt welche alle Statusmeldungen vom Serv
     return status;
 ```
 
-Um nun den programierten Server zum laufen zu bringen muss dieser noch kompeliert werden. Dies ist mit der Befehlszeile: `gcc -std=c99 Server_Min.c ../../open62541.c -o Server_Min` machbar, wobei hier abermals der Pfad zur `open62541.c` Datei angepasst werden muss.
-nach erfoglreichen kompelieren kann der server mit `./Server_min` gestartet werden. Wenn dies erfogreich ist, solle der Server einen Timestamp und die Adresse auf der er erreichbar ist angeben.
+Um nun den programierten Server zum laufen zu bringen muss dieser noch kompiliert werden. Dies ist mit der Befehlszeile: `gcc -std=c99 Server_Min.c ../../open62541.c -o Server_Min` machbar, wobei hier abermals der Pfad zur `open62541.c` Datei gegebennenfals angepasst werden muss.
+Nach erfoglreichen kompiliert kann der Server mit `./Server_min` gestartet werden. Wenn dies erfogreich ist, solle der Server einen Timestamp und die Adresse auf der er erreichbar ist angeben.
 ```
 [03/03/2017 13:12:16.286] info/network	TCP network layer listening on opc.tcp://OPC-UA-PI:4840
 ```
-Um jetzt zu überprüfen ob der Server auch sachgemäß arbeitet benutzen wir das vorher installierte Programm UaExpert. Nach ersten öffenen muss ein Certifikat angelegt werden, welches aber keine Probleme darstellen sollte. Danach kann über das Plus zeichen ein neuer Server hinzugefügt werden. Unter dem Feld Add Server muss dann zuerst ein Name unter Configuration Name vergeben werden. Danach kann unter dem Reiter "Advanced" noch die IP adresse, bzw der HostName in das Feld 'Endpoint Url' eingetragen werden. Dabei ist zu beachten, dass auch der verwendete Port mit angegeben werden muss.
-Nach dem hinzufügen der Servers erscheind dieser links in dem Feld Project, ist aber noch nicht verbunden. Zum verbinden muss dieser ausgewählt werden und das Steckersymbol in der obern Leiste geklickt werden. Nach einer erfolgreichen Verbindung wird dieses im Log mit einem "Browse succeeded" bestätigt, sowie mit einem eingesteckten Symbol neben dem Servernamen. Um nun zu überprüfen, ob auch Nodes (Servervariablen) ausgelesen werden können, öffente man auf der linken Seite in der Mitte den Server und danach die Nodes Server Status. Hierbei ist die Variable 'Current Time' sichtbar welche angeklickt und in die Mitte gezogen werden kann. Das in die Mitte ziehen bewirkt die Erstellung einer 'subscription'. Man sollte nun eine sich updatende Zeit sehen können. Um die subscription wieder zu entfernen, muss unter rechtsklick 'Remove selected Nodes' gewählt werden. 
-
+Um jetzt zu überprüfen ob der Server auch sachgemäß arbeitet benutzen wir das vorher installierte Programm UaExpert. Nach ersten öffenen muss ein Certifikat angelegt werden, welches aber keine Probleme darstellen sollte. Danach kann über das Plus Zeichen ein neuer Server hinzugefügt werden. Unter dem Feld 'Add Server' muss dann zuerst ein Name unter Configuration Name vergeben werden. Danach kann unter dem Reiter "Advanced" noch die IP adresse, bzw der HostName in das Feld 'Endpoint Url' eingetragen werden. Dabei ist zu beachten, dass auch der verwendete Port mit angegeben werden muss.
+Nach dem hinzufügen der Servers erscheint ein Link in dem Feld Project, ist aber noch nicht verbunden. Zum verbinden muss dieser ausgewählt werden und das Steckersymbol in der obern Leiste geklickt werden. Nach einer erfolgreichen Verbindung wird dieses im Log mit einem "Browse succeeded" bestätigt, sowie mit einem eingesteckten Symbol neben dem Servernamen. Um nun zu überprüfen, ob auch Nodes (Servervariablen) ausgelesen werden können, öffente man auf der linken Seite in der Mitte den Server und danach die Nodes Server Status. Hierbei ist die Variable 'Current Time' sichtbar welche angeklickt und in die Mitte gezogen werden kann. Das in die Mitte ziehen bewirkt die Erstellung einer 'subscription'. Man sollte nun eine sich updatende Zeit sehen können. Um die subscription wieder zu entfernen, muss unter rechtsklick 'Remove selected Nodes' gewählt werden. 
 Jetzt wissen wir, dass unser UPC-UA Server funktioniert und wir die schon vorhandenen Nodes auslesen können. Um eigene Nodes zu erstellen muss der Servercode etwas angepasst werden.
 
 ###Hinzufügen von einfachen Nodes
-Eine Node ist eine Variable welche auf dem Server gespeichert ist und von extern von einem Client aufgerufen werden kann. Wie man schon sehen konnte gibt es im OPC-UA Server schon standartmäßig Nodes wie 'CurrenTime', 'StartTime' oder 'State'. Um selber Nodes zu setzen müssen diese im Servercode hinzugefügt werden. Als Beispiel dient heirbei die Datei Server_Node.c an welcher das heinzufügen einer Node gezeit wird.
-
-Der erste Teil der Datei ist äquivalent zu der vorherigen und erstellt den server. Die Erstellung der Node findet im Teil nach `/* Add a variable node */` statt. Im ersten Block definieren wir die Parameter der Node. Zuerst wird eine UA_VariableAttributes variable namens attr erstellt. Danach wird in der Variable das Attribut `displayName` auf "Test Var" gesetzt. Danach wird ein UA_Int32 namens myInteger erstellt welcher den Wert "2572" beinhaltet. Dieser Wert wird dann noch mit attr.value verlinkt. Die verschiednenen Variablentypen können unter "!!!!!!!!!!!!!!!!!!!!!!!!!!!" nachgelesen werden. 
+Eine Node ist eine Variable welche auf dem Server gespeichert ist und von extern von einem Client aufgerufen werden kann. Wie man schon sehen konnte gibt es im OPC-UA Server schon standartmäßig Nodes wie 'CurrenTime', 'StartTime' oder 'State'. Um selber Nodes zu setzen müssen diese im Servercode hinzugefügt werden. Als Beispiel dient heirbei die Datei Server_Node.c an welcher das heinzufügen einer Node gezeigt wird.
+Der erste Teil der Datei ist äquivalent zu der vorherigen und erstellt den Server. Die Erstellung der Node findet im Teil nach `/* Add a variable node */` statt. Im ersten Block definieren wir die Parameter der Node. Zuerst wird eine UA_VariableAttributes variable namens attr erstellt. Danach wird in der Variable das Attribut `displayName` auf "Test Var" gesetzt. Danach wird ein UA_Int32 namens myInteger erstellt welcher den Wert "2572" beinhaltet. Dieser Wert wird dann noch mit attr.value verlinkt. Die verschiednenen Variablentypen können unter "http://open62541.org/doc/current/types.html" nachgelesen werden. 
 
 ```
     UA_VariableAttributes attr;
@@ -122,18 +116,18 @@ Im zweiten Block wird die NodeID auf "Test.Node" gesetzt. Sowie die Position unt
     UA_QualifiedName browseName = UA_QUALIFIEDNAME(1, "Test Node");
 ```
 
-Im letzte Block wird die definierte Node noch dem server hinzugefügt. Dabei ist der Syntax für UA_Server_addVariableNode `UA_Server_addVariableNode(!!!!!!!)` dieser kann in größerem Detail unter !!!!!! nachgelesen werden.
+Im letzte Block wird die definierte Node noch dem server hinzugefügt. Dabei ist der Syntax für UA_Server_addVariableNode `UA_Server_addVariableNode	(UA_Server *server, UA_Variant *value, const UA_QualifiedName browseName, UA_NodeId nodeId, const UA_NodeId	parentNodeId, const UA_NodeId referenceTypeId)` dieser kann in größerem Detail unter 'http://open62541.org/doc/0.1/group__server.html#ga9d0151ddb2f02dc46506aac5d10f2524' nachgelesen werden.
 ```
    UA_Server_addVariableNode(server, newNodeId, parentNodeId, parentReferenceNodeId,browseName, variableType, attr, NULL, NULL);
 ```
 
 Auch diesen Server kann man mit dem vorher schon verwendeten Kommando `gcc -std=c99 Server_Node.c ../../open62541.c -o Server_Node` kompelieren. Ausgeführt wird auch dieser mit dem Komando `./Server_Node.c`. 
-Man sollte jetzt mit UaExpert auf dem Server zugreifen können und dort die Node "Test Value" mit dem wert 2575 auslesen können.
+Man sollte jetzt mit UaExpert auf dem Server zugreifen können und dort die Node "Test Value" mit dem Wert 2575 auslesen können.
 
 ###Hinzufügen von veränderbaren Nodes
 So weit so gut... Es ist möglich Nodes zu erzeugen, und diese auszulesen. Aber der Wert, der Node ist immer der Wert der am Anfang gesetzt wurde. Wie können jetzt variable Werte, wie zum Beispiel der Wert eines Kopfes (gedrückt, nicht gedrückt), oder eines Thermomethers ausgelesen werden? Dafür gibt es zwei Varianten, zwischen welchen basierend auf den zeitlichen Anvorderungen gewählt wird.
 Einerseitz gibt es die Variante, bei der der Server selber in einem bestimmten zeitlichen Abstand den Sensorwert abfragt, und diesen in der Node speichert. Wenn nun eine Anfrage auf den Nodewert gestellt wird, wird der gespeicherte Wert zurückgegeben. Diese Methode ist sehr schnell, gibt aber nicht den aktuellen Wert zurück, sonder immer einen etwas veralteten Wert. Diese Methode wird bei zeitkrischen Anwendungen verwendet, bei denen der Wert nicht absolut aktuell sein muss.  
-Im Gegensatz dazu gibt es die zweite Methode, welche den Aktuellesten Wert leifert, aber nicht so schnell ist wie die Erste. Bei dieser Methode wird der Sensorwert abgefragt nachdem einen NodeAnfrage gestellt wurde. So kann der NodeAnfrage der top aktuelle Wert geliefert werden. 
+Im Gegensatz dazu gibt es die zweite Methode, welche den Aktuellesten Wert liefert, aber nicht so schnell ist wie die Erste. Bei dieser Methode wird der Sensorwert abgefragt nachdem einen NodeAnfrage gestellt wurde. So kann der NodeAnfrage der top aktuelle Wert geliefert werden. 
 
 Da die Umsetzung der zweiten Methode einfacher ist, werde ich diese zu erst erklären.
 Um das Prinzip auch ohne Knöpfe und Thermomether zu verstehen erkläre ich das Prinzip mit einer Funktion die bei jeder Anfrage den zurückgelieferten Wert verändert Als Beispielscript nutze ich hierbei Server_NodeVar.c.
@@ -222,4 +216,42 @@ UA_DataSource dateDataSource = (UA_DataSource) {.handle = &myInteger, .read = on
 Getestet kann diese Script mit dem UaExpert. Nach dem erfogreichen kompelieren mit `gcc -std=c99 Server_NodeVar4.c ../../open62541.c -o Server_NodeVar4` kann der Server abermals mit `./Server_NodeVar4` gestartet werden. Im UeExpert, sollte nun der Pi Server sichtbar sein. Nach dem erzeugen einer Subscription der Node ist der aktuelle Wert sichtbar. Dieser Wert kann im UeExpert auch durch klicken verändert werden. Es sollte nun möglich ein diesen Wert zu verändern, so dass der Wert auch konstant auf dem veränderten Wert bleibt. Es ist bei einer Veränderung der Node auch möglich im Terminalfenster die Infonachricht 'written value 123' zu beobachten.
 
 ##Client
-To DO....
+Der zweite große Teil der Open62541 paketes ist das Readingmodul. Mit dem Paket ist es auch möglich einen Client aufzubauen, welcher den Wert einen Node ausliest. Um die Funktionen eins Clients zu erklären ist das Script Client_Min.c im Ordner Clients gut zu verwenden. Im ersten Teil wird equivalent zum Server `studio.h` und ` open62541.h` importiert. Danach wird im Hauptteil des Scriptes ein `UA_Client` namens `*client` als neuer Client definiert, welcher die Standartwerte besitzt. Um sich mit einem Server verbinden zu können wird auch noch ein `UA_Client_connect` benötigt. Dieser heißt in diesem Fall `retval`. Um zu überprüfen ob eine verbindung mit dem Server aufgebaut werden kann wird daraufhin noch der Statuscode von `retval` ausgelesen, und nur wenn dieser `UA_STATUSCODE_GOOD` ist, also eine Verbindung aufgebaut werden konnte wird die Funktion weiter ausgeführt.
+```
+#include <stdio.h>
+#include "../../open62541.h"
+
+int main(void) {
+    UA_Client *client = UA_Client_new(UA_ClientConfig_standard);
+    UA_StatusCode retval = UA_Client_connect(client, "opc.tcp://OPC-UA-PI:4840");
+    if(retval != UA_STATUSCODE_GOOD) {
+        UA_Client_delete(client);
+        return (int)retval;
+    }
+```
+
+Nachdem überprüft wurde, dass eine Verbindung aufgebaut werden konnte, wird ein `UA_Variant` namens `value` definiert und dieses mit ` UA_Variant_init(&value);` initialisiert. Um nun auch eine bestimmte Node auslesen zu könenn muss noch eine `UA_NodeId` definierte werden. Diese ist in diesem Beispiel die lokale Zeit des Servers. Normalerweise wird eine Node mit der vorher definierten numerischen NodeId angesprochen, aber spezielle Nodes wie die locale Zeit, der Status oder der Startzeitpunkt können mit speziellen Shortcodes ausgelesen werden. (`UA_NS0ID_SERVER_SERVERSTATUS_STATE, UA_NS0ID_SERVER_SERVERSTATUS_STARTTIME `) 
+```
+    UA_Variant value; 
+    UA_Variant_init(&value);
+
+    const UA_NodeId nodeId =
+        UA_NODEID_NUMERIC(0, UA_NS0ID_SERVER_SERVERSTATUS_CURRENTTIME);
+```
+Jetzt ist es möglich die vorger definierten Variablen zu nutzen um den eigentlichen Wert der Node auszulesen. Dies wird im folgenden Abschnitt getan. Zuerst wird versucht mit einem `UA_Client_readValueAttribute` welchem alle vorherigen Variablen übergeben wurden die Node auszulesen. Nach dem Ausleseveruch wird zuerst getestes ob der Statuscode `UA_STATUSCODE_GOOD` entspricht und der ausgelesene Wert dem Datentypus `UA_TYPES_DATETIME` entspricht. Fals dies der Fall ist, wird aus `value` das Datum extrahiert, in einen String verwandelt und in der Konsole ausgegeben. Zuletzt wird noch der String `string_date` sowie `value` und der client gelöscht. 
+```
+    retval = UA_Client_readValueAttribute(client, nodeId, &value);
+    if(retval == UA_STATUSCODE_GOOD &&
+       UA_Variant_hasScalarType(&value, &UA_TYPES[UA_TYPES_DATETIME])) {
+        UA_DateTime raw_date = *(UA_DateTime*)value.data;
+        UA_String string_date = UA_DateTime_toString(raw_date);
+        printf("string date is: %.*s\n", (int)string_date.length, string_date.data);
+        UA_String_deleteMembers(&string_date);
+    }
+
+    /* Clean up */
+    UA_Variant_deleteMembers(&value);
+    UA_Client_delete(client); /* Disconnects the client internally */
+    return UA_STATUSCODE_GOOD;
+}
+```
