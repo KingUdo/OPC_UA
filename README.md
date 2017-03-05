@@ -183,12 +183,12 @@ UA_Job job = {.type = UA_JOBTYPE_METHODCALL,
                   .job.methodCall = {.method = testCallback, .data = NULL} };
     UA_Server_addRepeatedJob(server, job, 2000, NULL); // call every 2 sec
 ```
-Auch dieser Server kann mit `gcc -std=c99 Server_NodeVar3.c ../../open62541.c -o Server_NodeVar3` kompiliert werden. Beim Ausführen des Servers sollte man alle zwei Sekunden eine Loginfo mit `testcallback` bekommen. Hierbei kann man beobachten, wie sich der Wert von ButtonValue jede zweite Sekunden erhöht. Dies ist auch mit UaExpert möglich. Nach dem Erstellen einer Subscription kann man dort sehen, wie sich der Wert immer um 1 erhöht. Dabei darf man sich nicht von der Log Info 'VALUE READ!! 2572' irritieren lassen. Hierbei wird der dem Handeler zugewiesenen Wert ausgelesen. Dieser wurde am Anfang als 2572 definiert. Die `onRead` Funktion verändert in der jetzigen Konfiguration nicht den Orginalwert der Node, sonder gibt nur einen anderen Wert bei einer Abfrage zurück. 
+Auch dieser Server kann mit `gcc -std=c99 Server_NodeVar3.c ../../open62541.c -o Server_NodeVar3` kompiliert werden. Beim Ausführen des Servers sollte man alle zwei Sekunden eine Loginfo mit `testcallback` bekommen. Hierbei kann man beobachten, wie sich der Wert von ButtonValue jede zweite Sekunden erhöht. Dies ist auch mit UaExpert möglich. Nach dem Erstellen einer Subscription kann man dort sehen, wie sich der Wert immer um 1 erhöht. Dabei darf man sich nicht von der Log Info 'VALUE READ!! 2572' irritieren lassen. Hierbei wird der, dem Handeler zugewiesenen Wert ausgelesen. Dieser wurde am Anfang als 2572 definiert. Die `onRead` Funktion verändert in der jetzigen Konfiguration nicht nur den Orginalwert der Node, sonder gibt auch einen anderen Wert bei einer Abfrage zurück. 
 
 
 ###Node Beschreiben
 So ergibt sich die Frage, wie man den Orginalwert einer Node verändern kann. 
-Das ist einerseitz von einem externen Programm, andererseitz innerhalb der Funktion möglich.
+Das ist einerseits von einem externen Programm, andererseits innerhalb der Funktion möglich.
 Auch hierfür ist ein Beispiel vorhanden: im Script Server_NodeVar4.c, welches auf Server_NodeVar2.c basiert, wurde eine Schreibfunktion eingebaut. Um die korrekte Funktion der Schribfunktion zu bestätigen, wurde zuerst die Lesefunktion bearbeitet. In dieser wurden die Definition der Variable `ButtonValue` herausgenommen, genauso wie dem `*handel` nicht mehr der Wert vom `ButtonValue` zugewiesen wird. Jetzt wird automatisch bei einer Anfrage der Wert der Node zurückgegeben.
 ```
 static UA_StatusCode
@@ -199,7 +199,7 @@ onRead(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp,
     UA_Variant_setScalarCopy(&dataValue->value, (UA_UInt32*)handle, &UA_TYPES[UA_TYPES_INT32]);
 }
 ```
-Darüberhinaus wurde noch eine Funktion `onWrite` hinzugefügt. Diese ist sehr ähnlich zu der `onRead` Funktion. Die Funktion selber prüft erst, ob der Eingabedatentyp dem vorgegebenen Datentyp von `UA_TYPES_INT32` entspricht und übergibt dann dem handel den Wert von data. Zuletzt wird noch ein InfoLog Event mit "written value" und dem aktuellen Wert des handel ausgegeben. 
+Darüber hinaus wurde noch eine Funktion `onWrite` hinzugefügt. Diese ist sehr ähnlich zu der `onRead` Funktion. Die Funktion selber prüft erst, ob der Eingabedatentyp dem vorgegebenen Datentyp von `UA_TYPES_INT32` entspricht und übergibt dann dem handel den Wert von data. Zuletzt wird noch ein InfoLog Event mit "written value" und dem aktuellen Wert des handel ausgegeben. 
 ```
 onWrite(void *handle, const UA_NodeId nodeid,
              const UA_Variant *data, const UA_NumericRange *range) {
@@ -231,7 +231,7 @@ int main(void) {
     }
 ```
 
-Nachdem überprüft wurde, dass eine Verbindung aufgebaut werden konnte, wird ein `UA_Variant` namens `value` definiert und dieses mit ` UA_Variant_init(&value);` initialisiert. Um nun auch eine bestimmte Node auslesen zu könenn muss noch eine `UA_NodeId` definierte werden. Diese ist in diesem Beispiel die lokale Zeit des Servers. Normalerweise wird eine Node mit der vorher definierten numerischen NodeId angesprochen, aber spezielle Nodes wie die locale Zeit, der Status oder der Startzeitpunkt können mit speziellen Shortcodes ausgelesen werden. (`UA_NS0ID_SERVER_SERVERSTATUS_STATE, UA_NS0ID_SERVER_SERVERSTATUS_STARTTIME `) 
+Nachdem überprüft wurde, dass eine Verbindung aufgebaut werden konnte, wird ein `UA_Variant` namens `value` definiert und dieses mit ` UA_Variant_init(&value);` initialisiert. Um nun auch eine bestimmte Node auslesen zu könenn, muss noch eine `UA_NodeId` definierte werden. Diese ist in diesem Beispiel die lokale Zeit des Servers. Normalerweise wird eine Node mit der vorher definierten numerischen NodeId angesprochen, aber spezielle Nodes, wie die locale Zeit, der Status, oder der Startzeitpunkt, können mit spezielen Shortcodes ausgelesen werden. (`UA_NS0ID_SERVER_SERVERSTATUS_STATE, UA_NS0ID_SERVER_SERVERSTATUS_STARTTIME `) 
 ```
     UA_Variant value; 
     UA_Variant_init(&value);
@@ -239,7 +239,7 @@ Nachdem überprüft wurde, dass eine Verbindung aufgebaut werden konnte, wird ei
     const UA_NodeId nodeId =
         UA_NODEID_NUMERIC(0, UA_NS0ID_SERVER_SERVERSTATUS_CURRENTTIME);
 ```
-Jetzt ist es möglich die vorger definierten Variablen zu nutzen um den eigentlichen Wert der Node auszulesen. Dies wird im folgenden Abschnitt getan. Zuerst wird versucht mit einem `UA_Client_readValueAttribute` welchem alle vorherigen Variablen übergeben wurden die Node auszulesen. Nach dem Ausleseveruch wird zuerst getestes ob der Statuscode `UA_STATUSCODE_GOOD` entspricht und der ausgelesene Wert dem Datentypus `UA_TYPES_DATETIME` entspricht. Fals dies der Fall ist, wird aus `value` das Datum extrahiert, in einen String verwandelt und in der Konsole ausgegeben. Zuletzt wird noch der String `string_date` sowie `value` und der client gelöscht. 
+Jetzt ist es möglich die vorher definierten Variablen zu nutzen, um den eigentlichen Wert der Node auszulesen. Dies wird im folgenden Abschnitt getan. Zuerst wird versucht mit einem `UA_Client_readValueAttribute`, welchem alle vorherigen Variablen übergeben wurden, die Node auszulesen. Nach dem Ausleseveruch wird zuerst getestet, ob der Statuscode `UA_STATUSCODE_GOOD` und der ausgelesene Wert dem Datentypus `UA_TYPES_DATETIME` entspricht. Falls dies der Fall ist, wird aus `value` das Datum extrahiert, in einen String verwandelt und in der Konsole ausgegeben. Zuletzt wird noch der String `string_date`, sowie `value` und der client gelöscht. 
 ```
     retval = UA_Client_readValueAttribute(client, nodeId, &value);
     if(retval == UA_STATUSCODE_GOOD &&
